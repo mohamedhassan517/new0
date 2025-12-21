@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: offlineapp:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=${PORT:-3000}
+      - PING_MESSAGE=${PING_MESSAGE:-pong}
+      # SQLite mode (default inside container)
+      # - LOCAL_DB_DIR=/app/data
+      # Uncomment these to use MySQL mode instead of SQLite
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_PORT=${MYSQL_PORT}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    expose:
+      - "3000"
+    # Ports removed because Nginx handles ingress. 
+    # Uncomment if you want direct access for debugging.
+    # ports:
+    #   - "${PORT:-3000}:3000"
+    volumes:
+      - app_data:/app/data
+    depends_on:
+      - mysql
+    # If you want pure SQLite only, remove depends_on and the mysql service below
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpw}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-app}
+      - MYSQL_USER=${MYSQL_USER:-app}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-apppw}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: ["--character-set-server=utf8mb4","--collation-server=utf8mb4_unicode_ci"]
+
+volumes:
+  app_data:
+  mysql_data:
