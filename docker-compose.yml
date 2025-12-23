@@ -28,11 +28,11 @@ services:
       # SQLite mode (default inside container)
       # - LOCAL_DB_DIR=/app/data
       # Uncomment these to use MySQL mode instead of SQLite
-      - MYSQL_HOST=${MYSQL_HOST}
-      - MYSQL_PORT=${MYSQL_PORT}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_HOST=${MYSQL_HOST:-127.0.0.1}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-myapp_db}
+      - MYSQL_USER=${MYSQL_USER:-mohamed}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-mmmhhhaaa123}
     expose:
       - "3000"
     # Ports removed because Nginx handles ingress. 
@@ -49,12 +49,13 @@ services:
 
   mysql:
     image: mysql:8.0
+    container_name: mysql-db
     restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpw}
-      - MYSQL_DATABASE=${MYSQL_DATABASE:-app}
-      - MYSQL_USER=${MYSQL_USER:-app}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-apppw}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-myapp_db}
+      - MYSQL_USER=${MYSQL_USER:-mohamed}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-mmmhhhaaa123}
     ports:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
