@@ -8,6 +8,8 @@ services:
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - webroot:/var/www/html
+      - certbot-etc:/etc/letsencrypt:ro  # Mounted for live SSL certificates
+
     depends_on:
       - app
     networks:
@@ -28,43 +30,47 @@ services:
       # SQLite mode (default inside container)
       # - LOCAL_DB_DIR=/app/data
       # Uncomment these to use MySQL mode instead of SQLite
-      - MYSQL_HOST=${MYSQL_HOST:-127.0.0.1}
-      - MYSQL_PORT=${MYSQL_PORT:-3306}
-      - MYSQL_DATABASE=${MYSQL_DATABASE:-myapp_db}
-      - MYSQL_USER=${MYSQL_USER:-mohamed}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-mmmhhhaaa123}
-    expose:
-      - "3000"
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_PORT=${MYSQL_PORT}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     # Ports removed because Nginx handles ingress. 
     # Uncomment if you want direct access for debugging.
-    # ports:
-    #   - "${PORT:-3000}:3000"
-      
+     ports:
+      - "3000:3000"
+
     volumes:
       - app_data:/app/data
     depends_on:
       - mysql
     # If you want pure SQLite only, remove depends_on and the mysql service below
-
+    networks:
+      - accounting_app
 
   mysql:
     image: mysql:8.0
     container_name: mysql-db
     restart: unless-stopped
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpw}
-      - MYSQL_DATABASE=${MYSQL_DATABASE:-myapp_db}
-      - MYSQL_USER=${MYSQL_USER:-mohamed}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-mmmhhhaaa123}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     ports:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     command: ["--character-set-server=utf8mb4","--collation-server=utf8mb4_unicode_ci"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - accounting_app
-    
-    
+
+
   certbot:
       image: certbot/certbot
       container_name: certbot
@@ -74,7 +80,8 @@ services:
         - webroot:/var/www/html
       depends_on:
         - nginx
-      command: certonly --webroot --webroot-path=/var/www/html --email mohamedhassanali001@gmail.com --agree-tos --no-eff-email --non-interactive --keep-until-expiring -d hrmcompany.cloud
+
+      command: certonly --webroot --webroot-path=/var/www/html --email mohamedhassanali001@gm>
 networks:
   accounting_app:
     driver: bridge
